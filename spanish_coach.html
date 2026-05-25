@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spanish Coach</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+/* ── RESET & TOKENS ── */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0e0c;
+  --surface:#1a1916;
+  --surface2:#242320;
+  --surface3:#2e2c29;
+  --gold:#c9a84c;
+  --gold-dim:#8a6e2f;
+  --cream:#f0e8d5;
+  --cream-dim:#a89880;
+  --text:#e8e0d0;
+  --muted:#7a7268;
+  --green:#4a8c5c;
+  --green-l:#7ab88a;
+  --red:#8c4a4a;
+  --red-l:#c47a7a;
+  --amber-l:#c4a050;
+  --blue-l:#6a9ab0;
+  --r:10px;
+  --fd:'Fraunces',serif;
+  --fm:'DM Mono',monospace;
+}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--fm);font-size:14px;line-height:1.6}
+
+/* ── NAV ── */
+nav{
+  display:flex;align-items:center;gap:1rem;
+  padding:.85rem 1.5rem;
+  border-bottom:1px solid var(--surface3);
+  position:sticky;top:0;background:var(--bg);z-index:100;
+}
+.nav-title{font-family:var(--fd);font-size:1.3rem;font-weight:300;color:var(--gold);font-style:italic;flex:1}
+.nav-btn{
+  background:none;border:1px solid var(--surface3);border-radius:6px;
+  color:var(--muted);font-family:var(--fm);font-size:12px;
+  padding:5px 14px;cursor:pointer;transition:all .15s;letter-spacing:.04em;
+}
+.nav-btn:hover,.nav-btn.active{border-color:var(--gold-dim);color:var(--gold)}
+.nav-btn.active{background:var(--surface2)}
+.lesson-chip{
+  font-size:11px;padding:4px 10px;border-radius:20px;
+  background:var(--surface2);border:1px solid var(--surface3);
+  color:var(--gold);cursor:pointer;
+}
+.lesson-chip:hover{border-color:var(--gold-dim)}
+
+/* ── LAYOUT ── */
+main{max-width:740px;margin:0 auto;padding:2rem 1.5rem}
+
+/* ── SCREENS ── */
+.screen{display:none}
+.screen.active{display:block}
+
+/* ── CARDS & SURFACES ── */
+.card{background:var(--surface);border:1px solid var(--surface3);border-radius:var(--r);padding:1.3rem 1.4rem;margin-bottom:1rem}
+.card-label{font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.6rem}
+
+/* ── BUTTONS ── */
+.btn{padding:10px 24px;border-radius:var(--r);font-family:var(--fm);font-size:13px;cursor:pointer;transition:all .15s;border:none;letter-spacing:.04em}
+.btn-primary{background:var(--gold);color:#0f0e0c}
+.btn-primary:hover{background:#dbb85a;transform:translateY(-1px)}
+.btn-primary:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.btn-ghost{background:transparent;border:1px solid var(--surface3);color:var(--muted)}
+.btn-ghost:hover{border-color:var(--muted);color:var(--text)}
+.btn-sm{padding:6px 14px;font-size:12px}
+.btn-link{background:none;border:none;color:var(--muted);font-family:var(--fm);font-size:12px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.btn-link:hover{color:var(--text)}
+
+/* ── FORMS ── */
+input[type=number],input[type=text],input[type=password],textarea,select{
+  background:var(--surface2);border:1px solid var(--surface3);border-radius:8px;
+  color:var(--text);font-family:var(--fm);font-size:14px;
+  padding:10px 12px;outline:none;width:100%;transition:border-color .15s;
+}
+input:focus,textarea:focus{border-color:var(--gold-dim)}
+textarea{resize:none}
+::placeholder{color:var(--muted)}
+
+/* ── UPLOAD ZONE ── */
+.upload-zone{
+  border:1px dashed var(--surface3);border-radius:var(--r);
+  padding:1.1rem;text-align:center;cursor:pointer;
+  transition:border-color .2s,background .2s;position:relative;
+}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--gold-dim);background:var(--surface2)}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-ok{color:var(--green-l);font-size:12px;margin-top:.3rem}
+.upload-err{color:var(--red-l);font-size:12px;margin-top:.3rem}
+
+/* ── PILLS / CHIPS ── */
+.pill-row{display:flex;flex-wrap:wrap;gap:.4rem}
+.pill{
+  background:var(--surface2);border:1px solid var(--surface3);border-radius:20px;
+  padding:5px 14px;font-size:12px;color:var(--muted);cursor:pointer;transition:all .15s;
+}
+.pill:hover,.pill.on{border-color:var(--gold-dim);color:var(--gold);background:var(--surface3)}
+
+/* ── MODE CARDS ── */
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:1rem}
+.mode-card{
+  background:var(--surface);border:1px solid var(--surface3);border-radius:var(--r);
+  padding:1.1rem;cursor:pointer;transition:border-color .2s;text-align:center;
+}
+.mode-card:hover{border-color:var(--gold-dim)}
+.mode-card.on{border-color:var(--gold);background:var(--surface2)}
+.mode-icon{font-size:1.5rem;margin-bottom:.3rem}
+.mode-name{font-family:var(--fd);font-size:1rem;font-weight:300;color:var(--cream);font-style:italic}
+.mode-desc{font-size:11px;color:var(--muted);margin-top:.25rem}
+
+/* ── PROGRESS ── */
+.progress-bar{height:3px;background:var(--surface2);border-radius:2px;overflow:hidden;margin:.4rem 0}
+.progress-fill{height:100%;background:var(--gold);transition:width .4s ease}
+.q-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+
+/* ── QUESTION ── */
+.q-type{display:inline-block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border:1px solid var(--surface3);border-radius:4px;padding:2px 8px;margin-bottom:.9rem}
+.q-text{font-family:var(--fd);font-size:1.5rem;font-weight:300;color:var(--cream);line-height:1.4;margin-bottom:.5rem}
+.q-hint-text{font-size:12px;color:var(--muted);font-style:italic;margin-top:.4rem}
+
+/* ── FEEDBACK ── */
+.feedback{border-radius:var(--r);padding:1.1rem 1.3rem;display:none;flex-direction:column;gap:.5rem}
+.feedback.show{display:flex}
+.feedback.correct{background:#1a2e1f;border:1px solid #2a4a2f}
+.feedback.almost{background:#2a2010;border:1px solid #4a3a18}
+.feedback.incorrect{background:#2a1515;border:1px solid #4a2020}
+.fb-grade{font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+.correct .fb-grade{color:var(--green-l)}
+.almost .fb-grade{color:var(--amber-l)}
+.incorrect .fb-grade{color:var(--red-l)}
+.fb-ans{font-family:var(--fd);font-size:1.1rem;font-weight:300;color:var(--cream)}
+.fb-exp{font-size:13px;color:var(--muted)}
+.fb-tag{display:inline-block;font-size:10px;letter-spacing:.07em;text-transform:uppercase;padding:2px 7px;border-radius:4px;background:var(--surface3);color:var(--muted)}
+
+/* ── ANSWER ROW ── */
+.ans-row{display:flex;gap:.6rem;align-items:center;margin-top:.5rem}
+
+/* ── CONVERSATION ── */
+.convo-wrap{display:flex;flex-direction:column;gap:.7rem}
+.scenario-bar{
+  background:var(--surface2);border-radius:var(--r);padding:.7rem 1rem;
+  font-size:12px;color:var(--muted);border-left:2px solid var(--gold-dim);
+}
+.scenario-bar strong{color:var(--gold);font-weight:400}
+.messages{display:flex;flex-direction:column;gap:.7rem;min-height:280px;max-height:400px;overflow-y:auto;padding:.2rem 0}
+.msg{display:flex;gap:.7rem;animation:fadeUp .2s ease}
+.msg-av{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px}
+.msg.partner .msg-av{background:var(--surface3);color:var(--gold)}
+.msg.user .msg-av{background:var(--surface2);color:var(--muted)}
+.msg-bub{background:var(--surface);border:1px solid var(--surface3);border-radius:var(--r);padding:.7rem .9rem;font-size:13px;max-width:90%}
+.msg.user .msg-bub{background:var(--surface2)}
+.msg-es{color:var(--cream);font-family:var(--fd);font-weight:300;font-style:italic;font-size:1rem}
+.msg-tr{font-size:11px;color:var(--muted);margin-top:.2rem}
+.msg-fix{font-size:11px;color:var(--amber-l);margin-top:.4rem;padding-top:.4rem;border-top:1px solid var(--surface3)}
+.convo-input-row{display:flex;gap:.6rem}
+.convo-input-row textarea{flex:1;max-height:80px}
+
+/* ── SUMMARY ── */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:.7rem;margin-bottom:1rem}
+.stat{background:var(--surface);border:1px solid var(--surface3);border-radius:var(--r);padding:.9rem 1rem;text-align:center}
+.stat-num{font-family:var(--fd);font-size:1.9rem;font-weight:300;color:var(--gold)}
+.stat-lbl{font-size:11px;color:var(--muted);margin-top:.2rem;letter-spacing:.05em;text-transform:uppercase}
+.tag-row{display:flex;flex-wrap:wrap;gap:.4rem}
+.tag{font-size:12px;padding:3px 10px;border-radius:20px;background:var(--surface2);color:var(--muted);border:1px solid var(--surface3)}
+.tag.weak{border-color:var(--red);color:var(--red-l)}
+.tag.strong{border-color:var(--green);color:var(--green-l)}
+
+/* ── TRACKER ── */
+.filter-row{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.8rem}
+.t-table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+.t-table th{text-align:left;font-size:11px;font-weight:500;color:var(--muted);padding:6px 8px 8px;border-bottom:1px solid var(--surface3);letter-spacing:.04em;text-transform:uppercase}
+.t-table td{padding:8px 8px;border-bottom:1px solid var(--surface2);vertical-align:middle}
+.t-table tr:last-child td{border-bottom:none}
+.t-table tr:hover td{background:var(--surface2)}
+.bar-wrap{display:flex;align-items:center;gap:6px}
+.bar-bg{flex:1;height:5px;background:var(--surface3);border-radius:3px;overflow:hidden;min-width:50px}
+.bar-fill{height:100%;border-radius:3px}
+.bar-fill.g{background:#639922}.bar-fill.a{background:#BA7517}.bar-fill.r{background:#E24B4A}
+.pct{font-size:12px;font-weight:500;min-width:34px;text-align:right}
+.pct.g{color:var(--green-l)}.pct.a{color:var(--amber-l)}.pct.r{color:var(--red-l)}
+.type-tag{display:inline-block;font-size:10px;padding:2px 7px;border-radius:4px;border:1px solid var(--surface3);color:var(--muted)}
+.type-tag.vocab{background:#0C447C22;color:var(--blue-l);border-color:#0C447C44}
+.type-tag.rule{background:#63390622;color:var(--amber-l);border-color:#63390644}
+.type-tag.phrase{background:#27500a22;color:var(--green-l);border-color:#27500a44}
+.chart-wrap{position:relative;width:100%;height:180px;margin-bottom:1.2rem}
+.metric-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:.7rem;margin-bottom:1.2rem}
+.metric{background:var(--surface2);border-radius:8px;padding:.8rem .9rem}
+.metric-val{font-size:22px;font-weight:500}
+.metric-val.g{color:var(--green-l)}.metric-val.a{color:var(--amber-l)}.metric-val.r{color:var(--red-l)}
+.metric-lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.streak-badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:4px 10px;border-radius:20px;background:#2a1f08;border:1px solid var(--amber-l);color:var(--amber-l)}
+
+/* ── SETTINGS / ONBOARDING ── */
+.onboard-wrap{max-width:480px;margin:0 auto;padding-top:1rem}
+.onboard-title{font-family:var(--fd);font-size:1.6rem;font-weight:300;color:var(--gold);font-style:italic;margin-bottom:.3rem}
+.onboard-sub{font-size:13px;color:var(--muted);margin-bottom:1.5rem}
+.key-input-row{display:flex;gap:.6rem}
+.key-input-row input{flex:1;font-family:var(--fm);letter-spacing:.04em}
+.key-note{font-size:12px;color:var(--muted);margin-top:.5rem;line-height:1.5}
+.key-note a{color:var(--gold);text-decoration:none}
+.key-note a:hover{text-decoration:underline}
+.step-num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--surface3);color:var(--muted);font-size:11px;flex-shrink:0;margin-right:.5rem}
+
+/* ── LOADING ── */
+.loading{display:flex;align-items:center;gap:.6rem;color:var(--muted);font-size:13px;padding:.6rem 0}
+.dots{display:flex;gap:4px}
+.dots span{width:5px;height:5px;border-radius:50%;background:var(--gold-dim);animation:pulse 1.2s ease infinite}
+.dots span:nth-child(2){animation-delay:.2s}
+.dots span:nth-child(3){animation-delay:.4s}
+
+/* ── UTILS ── */
+.hidden{display:none!important}
+.flex{display:flex;align-items:center;gap:.6rem}
+.spacer{flex:1}
+.divider{height:1px;background:var(--surface3);margin:.8rem 0}
+.italic{font-style:italic}
+.gold{color:var(--gold)}
+.muted{color:var(--muted)}
+.empty{text-align:center;padding:2.5rem 1rem;color:var(--muted);font-size:13px}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:2px}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
+
+/* ── RESPONSIVE ── */
+@media(max-width:520px){
+  .mode-grid{grid-template-columns:1fr}
+  .key-input-row{flex-direction:column}
+  .stat-grid{grid-template-columns:1fr 1fr}
+  nav{padding:.7rem 1rem}
+  main{padding:1.2rem 1rem}
+  .q-text{font-size:1.2rem}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-title">Spanish Coach</div>
+  <button class="nav-btn active" id="nav-practice" onclick="switchTab('practice')">Practice</button>
+  <button class="nav-btn" id="nav-tracker" onclick="switchTab('tracker')">Tracker</button>
+  <button class="nav-btn" id="nav-settings" onclick="switchTab('settings')">Settings</button>
+  <div class="lesson-chip hidden" id="lessonChip" onclick="switchTab('settings')">LT —</div>
+</nav>
+
+<main>
+
+<!-- ══════════════════════════════════════
+     SETTINGS / ONBOARDING SCREEN
+══════════════════════════════════════ -->
+<div class="screen active" id="screen-settings">
+  <div class="onboard-wrap">
+    <div class="onboard-title">Set up your coach</div>
+    <div class="onboard-sub">One-time setup. Everything saves in your browser.</div>
+
+    <div class="card">
+      <div class="card-label">
+        <span class="step-num">1</span>Anthropic API Key
+      </div>
+      <div class="key-input-row">
+        <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." autocomplete="off">
+        <button class="btn btn-primary btn-sm" onclick="saveApiKey()">Save</button>
+      </div>
+      <div class="key-note">
+        Get a free key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys → Create Key.<br>
+        Your key is stored only in this browser and sent directly to Anthropic. It never goes anywhere else.
+      </div>
+      <div id="keyStatus" style="margin-top:.5rem;font-size:12px"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">
+        <span class="step-num">2</span>Language Transfer Lesson
+      </div>
+      <div class="flex">
+        <input type="number" id="lessonInput" min="1" max="50" placeholder="e.g. 18" style="width:100px">
+        <span class="muted" style="font-size:12px">Lessons 1 → this number are unlocked</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">
+        <span class="step-num">3</span>Upload Your PDFs
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem">
+        <div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:.4rem">VOCABULARY PDF</div>
+          <div class="upload-zone" id="vZone">
+            <input type="file" accept=".pdf" id="vFile" onchange="handleUpload('vocab',this)">
+            <div style="font-size:12px;color:var(--muted)">Drop or click</div>
+            <div id="vStatus"></div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:.4rem">RULES PDF</div>
+          <div class="upload-zone" id="rZone">
+            <input type="file" accept=".pdf" id="rFile" onchange="handleUpload('rules',this)">
+            <div style="font-size:12px;color:var(--muted)">Drop or click</div>
+            <div id="rStatus"></div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-top:.6rem">Re-upload whenever your OneNote files change. The coach reads the full PDF each session.</div>
+    </div>
+
+    <button class="btn btn-primary" id="saveSettingsBtn" onclick="saveSettings()">Save &amp; go to practice →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     PRACTICE SCREEN
+══════════════════════════════════════ -->
+<div class="screen hidden" id="screen-practice">
+
+  <!-- SETUP -->
+  <div id="pSetup">
+    <div class="card">
+      <div class="card-label">Practice mode</div>
+      <div class="mode-grid">
+        <div class="mode-card on" id="mQuiz" onclick="selMode('quiz')">
+          <div class="mode-icon">⚡</div>
+          <div class="mode-name">Quiz Coach</div>
+          <div class="mode-desc">Spaced retrieval · vocab rotation · weak spot tracking</div>
+        </div>
+        <div class="mode-card" id="mConvo" onclick="selMode('convo')">
+          <div class="mode-icon">💬</div>
+          <div class="mode-name">Conversation</div>
+          <div class="mode-desc">Chat with a Spanish speaker using your learned vocab</div>
+        </div>
+      </div>
+
+      <div id="drillSection">
+        <div class="card-label" style="margin-top:.8rem">Drill type</div>
+        <div class="pill-row" id="drillPills">
+          <div class="pill on" data-d="standard" onclick="selPill(this,'drill')">Standard (10)</div>
+          <div class="pill" data-d="quick" onclick="selPill(this,'drill')">Quick (5)</div>
+          <div class="pill" data-d="deep" onclick="selPill(this,'drill')">Deep (20)</div>
+          <div class="pill" data-d="vocab" onclick="selPill(this,'drill')">Vocab only</div>
+          <div class="pill" data-d="rules" onclick="selPill(this,'drill')">Rules only</div>
+          <div class="pill" data-d="sentences" onclick="selPill(this,'drill')">Sentence building</div>
+          <div class="pill" data-d="mixed" onclick="selPill(this,'drill')">Mixed</div>
+          <div class="pill" data-d="weakspots" onclick="selPill(this,'drill')">Weak spots</div>
+        </div>
+      </div>
+
+      <div id="sceneSection" class="hidden">
+        <div class="card-label" style="margin-top:.8rem">Scenario</div>
+        <div class="pill-row" id="scenePills">
+          <div class="pill on" data-s="cafe" onclick="selPill(this,'scene')">At a café</div>
+          <div class="pill" data-s="street" onclick="selPill(this,'scene')">Asking directions</div>
+          <div class="pill" data-s="market" onclick="selPill(this,'scene')">At a market</div>
+          <div class="pill" data-s="friend" onclick="selPill(this,'scene')">Chatting with a friend</div>
+          <div class="pill" data-s="free" onclick="selPill(this,'scene')">Free chat</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="setupWarning" class="hidden" style="font-size:13px;color:var(--red-l);margin-bottom:.8rem;padding:.6rem 1rem;background:#2a1515;border-radius:8px;border:1px solid var(--red)"></div>
+    <button class="btn btn-primary" id="startBtn" onclick="startSession()">Start practice →</button>
+  </div>
+
+  <!-- QUIZ -->
+  <div id="pQuiz" class="hidden">
+    <div style="margin-bottom:1rem">
+      <div class="q-meta">
+        <span id="qCounter">Question 1 of 10</span>
+        <span id="qScore">0 correct</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="qProgress" style="width:0%"></div></div>
+    </div>
+
+    <div class="card">
+      <div class="q-type" id="qType">EN → ES</div>
+      <div class="q-text" id="qText">Loading...</div>
+      <div class="q-hint-text hidden" id="qHintText"></div>
+    </div>
+
+    <div class="feedback hidden" id="feedback">
+      <div class="fb-grade" id="fbGrade"></div>
+      <div class="fb-ans" id="fbAns"></div>
+      <div class="fb-exp" id="fbExp"></div>
+      <div class="fb-tag hidden" id="fbTag"></div>
+    </div>
+
+    <div style="margin-top:.6rem">
+      <textarea id="ansInput" rows="2" placeholder="Type your answer... (Enter to submit)"></textarea>
+      <div class="ans-row">
+        <button class="btn-link" id="hintBtn" onclick="showHint()">I need a hint</button>
+        <div class="spacer"></div>
+        <button class="btn btn-ghost btn-sm" onclick="endQuiz()">End session</button>
+        <button class="btn btn-primary btn-sm" id="submitBtn" onclick="submitAnswer()">Submit</button>
+        <button class="btn btn-primary btn-sm hidden" id="nextBtn" onclick="nextQuestion()">Next →</button>
+      </div>
+    </div>
+
+    <div class="loading hidden" id="qLoading">
+      <div class="dots"><span></span><span></span><span></span></div>
+      <span id="qLoadMsg">Generating question...</span>
+    </div>
+  </div>
+
+  <!-- CONVERSATION -->
+  <div id="pConvo" class="hidden">
+    <div class="convo-wrap">
+      <div class="scenario-bar">
+        <strong>Scenario:</strong> <span id="sceneText"></span>
+        <span style="float:right;cursor:pointer;color:var(--gold-dim);font-size:12px" onclick="endConvo()">End ✕</span>
+      </div>
+      <div class="messages" id="messages"></div>
+      <div class="loading hidden" id="convoLoading">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span>Elena is typing...</span>
+      </div>
+      <div class="convo-input-row">
+        <textarea id="convoInput" placeholder="Reply in Spanish... (Enter to send)" rows="2"></textarea>
+        <button class="btn btn-primary" onclick="sendMsg()">Send</button>
+      </div>
+      <div style="font-size:11px;color:var(--muted)">Corrections appear below each message. <span class="btn-link" onclick="endConvo()">End conversation →</span></div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div id="pSummary" class="hidden">
+    <div style="font-family:var(--fd);font-size:1.4rem;font-weight:300;color:var(--gold);font-style:italic;margin-bottom:1rem">Session complete</div>
+    <div class="stat-grid" id="summaryStats"></div>
+    <div class="card">
+      <div class="card-label">Weak spots — review these next session</div>
+      <div class="tag-row" id="weakTags"></div>
+    </div>
+    <div class="card">
+      <div class="card-label">Strong this session</div>
+      <div class="tag-row" id="strongTags"></div>
+    </div>
+    <div class="card">
+      <div class="card-label">Suggested focus</div>
+      <div id="suggestText" style="font-size:13px;color:var(--muted);line-height:1.7"></div>
+    </div>
+    <div class="flex" style="gap:.7rem;margin-top:.5rem">
+      <button class="btn btn-primary" onclick="newSession()">New session →</button>
+      <button class="btn btn-ghost" onclick="backToSetup()">Change settings</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     TRACKER SCREEN
+══════════════════════════════════════ -->
+<div class="screen hidden" id="screen-tracker">
+  <div class="flex" style="margin-bottom:1.2rem;flex-wrap:wrap;gap:.6rem">
+    <div>
+      <div style="font-size:18px;font-weight:500">Progress tracker</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:2px" id="trackerSub">Loading...</div>
+    </div>
+    <div class="spacer"></div>
+    <div class="streak-badge hidden" id="streakBadge">🔥 <span id="streakNum">0</span>-day streak</div>
+    <button class="btn btn-ghost btn-sm" onclick="exportCSV()">Export CSV</button>
+    <button class="btn btn-ghost btn-sm" style="border-color:var(--red);color:var(--red-l)" onclick="confirmReset()">Reset</button>
+  </div>
+
+  <div class="metric-row" id="trackerMetrics"></div>
+
+  <div class="card" style="padding:1rem 1.2rem">
+    <div style="font-size:13px;font-weight:500;margin-bottom:.8rem">Accuracy over sessions</div>
+    <div style="display:flex;gap:14px;font-size:12px;color:var(--muted);margin-bottom:.6rem;flex-wrap:wrap">
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#639922;margin-right:4px;vertical-align:middle"></span>Correct</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#BA7517;margin-right:4px;vertical-align:middle"></span>Almost</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#E24B4A;margin-right:4px;vertical-align:middle"></span>Incorrect</span>
+    </div>
+    <div class="chart-wrap"><canvas id="sessionChart" role="img" aria-label="Stacked bar chart of correct, almost, and incorrect answers per session">No session data yet.</canvas></div>
+  </div>
+
+  <div class="card" style="padding:1rem 1.2rem">
+    <div class="flex" style="margin-bottom:.8rem;flex-wrap:wrap;gap:.4rem">
+      <div style="font-size:13px;font-weight:500">Item performance</div>
+      <div class="spacer"></div>
+      <div class="filter-row" style="margin-bottom:0">
+        <button class="pill on btn-sm" onclick="setFilter('all',this)">All</button>
+        <button class="pill btn-sm" onclick="setFilter('weak',this)">Struggling</button>
+        <button class="pill btn-sm" onclick="setFilter('strong',this)">Strong</button>
+        <button class="pill btn-sm" onclick="setFilter('vocab',this)">Vocab</button>
+        <button class="pill btn-sm" onclick="setFilter('rule',this)">Rules</button>
+      </div>
+    </div>
+    <div id="itemTableWrap"></div>
+  </div>
+</div>
+
+</main>
+
+<script>
+/* ══════════════════════════════════
+   CONSTANTS & STATE
+══════════════════════════════════ */
+const API = 'https://api.anthropic.com/v1/messages';
+const MODEL = 'claude-sonnet-4-20250514';
+const STORE = 'sc-tracker-v1';
+const SCENES = {
+  cafe:'You\'re at a café in Madrid. Order, ask about the menu, chat with the barista.',
+  street:'You\'re lost in a Spanish city. Ask a local for directions.',
+  market:'You\'re at a market. Ask about prices, what things are made of, buy something.',
+  friend:'You\'re catching up with a Spanish-speaking friend. Talk about plans and things you want to do.',
+  free:'Open conversation — talk about anything in Spanish.'
+};
+
+let cfg = {
+  apiKey: localStorage.getItem('sc-key') || '',
+  lesson: parseInt(localStorage.getItem('sc-lesson')) || null,
+  vocabB64: null,
+  rulesB64: null,
+};
+
+let sess = {
+  mode:'quiz', drill:'standard', scene:'cafe',
+  qNum:0, total:10, correct:0, almost:0, wrong:0,
+  weak:[], strong:[], currentQ:null, awaitingNext:false,
+  convoHistory:[], convoCorrected:0,
+};
+
+let db = { sessions:[], items:{}, streak:{last:null,count:0} };
+let chart = null;
+let trackerFilter = 'all';
+
+/* ══════════════════════════════════
+   INIT
+══════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', () => {
+  loadDB();
+  if (cfg.apiKey) {
+    document.getElementById('apiKeyInput').value = cfg.apiKey;
+    markKeySaved();
+  }
+  if (cfg.lesson) {
+    document.getElementById('lessonInput').value = cfg.lesson;
+    document.getElementById('lessonChip').textContent = 'LT ' + cfg.lesson;
+    document.getElementById('lessonChip').classList.remove('hidden');
+  }
+  if (cfg.apiKey && cfg.lesson) {
+    switchTab('practice');
+  }
+  document.getElementById('ansInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitAnswer(); }
+  });
+  document.getElementById('convoInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+  });
+});
+
+/* ══════════════════════════════════
+   TABS
+══════════════════════════════════ */
+function switchTab(tab) {
+  ['practice','tracker','settings'].forEach(t => {
+    document.getElementById('screen-' + t).classList.toggle('hidden', t !== tab);
+    document.getElementById('screen-' + t).classList.toggle('active', t === tab);
+    document.getElementById('nav-' + t).classList.toggle('active', t === tab);
+  });
+  if (tab === 'tracker') renderTracker();
+}
+
+/* ══════════════════════════════════
+   SETTINGS
+══════════════════════════════════ */
+async function handleUpload(type, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const statusEl = document.getElementById(type === 'vocab' ? 'vStatus' : 'rStatus');
+  statusEl.className = ''; statusEl.textContent = 'Reading…';
+  try {
+    const b64 = await toB64(file);
+    if (type === 'vocab') cfg.vocabB64 = b64;
+    else cfg.rulesB64 = b64;
+    statusEl.className = 'upload-ok';
+    statusEl.textContent = '✓ ' + file.name;
+  } catch {
+    statusEl.className = 'upload-err';
+    statusEl.textContent = '✗ Failed to read';
+  }
+}
+
+function toB64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = () => rej();
+    r.readAsDataURL(file);
+  });
+}
+
+function saveApiKey() {
+  const val = document.getElementById('apiKeyInput').value.trim();
+  if (!val.startsWith('sk-')) {
+    document.getElementById('keyStatus').textContent = '✗ Key should start with sk-ant-…';
+    document.getElementById('keyStatus').style.color = 'var(--red-l)';
+    return;
+  }
+  cfg.apiKey = val;
+  localStorage.setItem('sc-key', val);
+  markKeySaved();
+}
+
+function markKeySaved() {
+  const el = document.getElementById('keyStatus');
+  el.textContent = '✓ Key saved';
+  el.style.color = 'var(--green-l)';
+}
+
+function saveSettings() {
+  const lesson = parseInt(document.getElementById('lessonInput').value);
+  if (!cfg.apiKey) { alert('Please add your API key first.'); return; }
+  if (!lesson || lesson < 1) { alert('Please enter your current Language Transfer lesson number.'); return; }
+  cfg.lesson = lesson;
+  localStorage.setItem('sc-lesson', lesson);
+  document.getElementById('lessonChip').textContent = 'LT ' + lesson;
+  document.getElementById('lessonChip').classList.remove('hidden');
+  switchTab('practice');
+}
+
+/* ══════════════════════════════════
+   PRACTICE SETUP
+══════════════════════════════════ */
+function selMode(m) {
+  sess.mode = m;
+  document.getElementById('mQuiz').classList.toggle('on', m === 'quiz');
+  document.getElementById('mConvo').classList.toggle('on', m === 'convo');
+  document.getElementById('drillSection').classList.toggle('hidden', m !== 'quiz');
+  document.getElementById('sceneSection').classList.toggle('hidden', m !== 'convo');
+}
+
+function selPill(el, group) {
+  const attr = group === 'drill' ? 'data-d' : 'data-s';
+  el.closest('.pill-row').querySelectorAll('.pill').forEach(p => p.classList.remove('on'));
+  el.classList.add('on');
+  if (group === 'drill') {
+    sess.drill = el.getAttribute('data-d');
+    sess.total = {quick:5,standard:10,deep:20,vocab:10,rules:10,sentences:10,mixed:15,weakspots:10}[sess.drill] || 10;
+  } else {
+    sess.scene = el.getAttribute('data-s');
+  }
+}
+
+function startSession() {
+  const warn = document.getElementById('setupWarning');
+  if (!cfg.apiKey) { warn.textContent = 'Please add your API key in Settings first.'; warn.classList.remove('hidden'); return; }
+  if (!cfg.lesson) { warn.textContent = 'Please set your Language Transfer lesson in Settings.'; warn.classList.remove('hidden'); return; }
+  if (!cfg.vocabB64 || !cfg.rulesB64) { warn.textContent = 'Please upload both PDF files in Settings first.'; warn.classList.remove('hidden'); return; }
+  warn.classList.add('hidden');
+  sess.qNum = 0; sess.correct = 0; sess.almost = 0; sess.wrong = 0;
+  sess.weak = []; sess.strong = []; sess.awaitingNext = false;
+  sess.convoHistory = []; sess.convoCorrected = 0;
+  document.getElementById('pSetup').classList.add('hidden');
+  if (sess.mode === 'quiz') {
+    document.getElementById('pQuiz').classList.remove('hidden');
+    loadQuestion();
+  } else {
+    document.getElementById('pConvo').classList.remove('hidden');
+    startConvo();
+  }
+}
+
+/* ══════════════════════════════════
+   CLAUDE API CALL
+══════════════════════════════════ */
+async function callClaude(system, userText, withFiles = true) {
+  const content = [];
+  if (withFiles) {
+    if (cfg.vocabB64) content.push({ type:'document', source:{ type:'base64', media_type:'application/pdf', data:cfg.vocabB64 }});
+    if (cfg.rulesB64) content.push({ type:'document', source:{ type:'base64', media_type:'application/pdf', data:cfg.rulesB64 }});
+  }
+  content.push({ type:'text', text: userText });
+  const res = await fetch(API, {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', 'x-api-key': cfg.apiKey, 'anthropic-version':'2023-06-01' },
+    body: JSON.stringify({ model:MODEL, max_tokens:1000, system, messages:[{ role:'user', content }] })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'API error ' + res.status);
+  }
+  const data = await res.json();
+  const text = data.content.map(i => i.text || '').join('').replace(/```json|```/g,'').trim();
+  return JSON.parse(text);
+}
+
+/* ══════════════════════════════════
+   QUIZ ENGINE
+══════════════════════════════════ */
+const DRILL_NOTES = {
+  quick:'Quick Drill (5 questions). Mix vocabulary recall and short sentence translation.',
+  standard:'Standard Drill (10 questions). Mix vocabulary, EN→ES sentence translation, and one rule-application question.',
+  deep:'Deep Practice (20 questions). All question types: vocabulary, sentence translation, rule application, error correction, sentence recombination.',
+  vocab:'Vocabulary only. Single words or short phrases. Alternate EN→ES and ES→EN.',
+  rules:'Rules only. Ask the learner to explain a rule, apply it, or identify which applies.',
+  sentences:'Sentence building only. Full English sentence → full Spanish translation. Prioritise verbs of motion, object pronouns, question formation.',
+  mixed:'All question types in roughly equal proportion.',
+  weakspots:'Focus on weak spots. Re-test items the learner has missed. Use the most grammatically complex patterns if no weak spots are known yet.'
+};
+
+function quizSystem() {
+  return `You are a Spanish practice coach for an English-speaking beginner.
+Learner has completed Language Transfer lessons 1–${cfg.lesson}.
+You have their Vocabulary PDF and Rules PDF attached.
+
+STRICT RULES:
+- Use ONLY vocabulary/rules from the uploaded PDFs and LT lessons 1–${cfg.lesson}.
+- NEVER use material from lessons beyond ${cfg.lesson}.
+- Rotate across ALL vocabulary. Do NOT repeat verbs or patterns from these already-used tags this session: ${JSON.stringify(sess.strong)}.
+- Weak spots to re-test: ${JSON.stringify(sess.weak)}.
+- Never reveal the answer before the learner attempts.
+
+${DRILL_NOTES[sess.drill] || DRILL_NOTES.standard}
+
+RESPOND WITH VALID JSON ONLY — no markdown, no preamble:
+{
+  "type": "EN→ES | ES→EN | rule | error_correction | sentence_build",
+  "prompt": "the question shown to the learner",
+  "hint": "a subtle clue — NOT the answer",
+  "answer": "the correct answer",
+  "explanation": "1–2 sentence beginner-friendly explanation referencing the specific rule or pattern",
+  "error_type": "vocabulary | grammar | pronunciation | word_order | pronoun | connector | null",
+  "item_tag": "1–3 word tag, e.g. 'dormir ue-split' or 'verb of motion a'"
+}`;
+}
+
+function gradeSystem() {
+  return `You are a Spanish grading assistant. Return ONLY valid JSON — no markdown.
+{
+  "grade": "correct | almost | incorrect",
+  "correction": "the fully correct version",
+  "explanation": "1–2 plain-English sentences. Reference the specific rule. Be encouraging and precise.",
+  "error_type": "vocabulary | grammar | spelling | word_order | pronoun | connector | accent | null"
+}
+Grading:
+- correct = right answer (minor spelling ok if concept is right, e.g. qiero vs quiero)
+- almost = right idea/structure but wrong gender, missing accent, small word error, or spelling
+- incorrect = wrong verb form, wrong word, wrong structure, missing key element`;
+}
+
+async function loadQuestion() {
+  sess.qNum++;
+  if (sess.qNum > sess.total) { showQuizSummary(); return; }
+  updateQProgress();
+  setQLoad(true, 'Generating question…');
+  clearFeedback();
+  document.getElementById('ansInput').value = '';
+  document.getElementById('ansInput').disabled = false;
+  document.getElementById('submitBtn').classList.remove('hidden');
+  document.getElementById('nextBtn').classList.add('hidden');
+  document.getElementById('qHintText').classList.add('hidden');
+  document.getElementById('hintBtn').style.display = '';
+  sess.awaitingNext = false;
+  try {
+    const q = await callClaude(quizSystem(), `Generate question ${sess.qNum} of ${sess.total}.`);
+    sess.currentQ = q;
+    document.getElementById('qType').textContent = q.type;
+    document.getElementById('qText').textContent = q.prompt;
+    setQLoad(false);
+    document.getElementById('ansInput').focus();
+  } catch(e) {
+    setQLoad(false);
+    document.getElementById('qText').textContent = 'Error: ' + e.message + '. Check your API key in Settings.';
+  }
+}
+
+async function submitAnswer() {
+  if (sess.awaitingNext || !sess.currentQ) return;
+  const ans = document.getElementById('ansInput').value.trim();
+  if (!ans) return;
+  document.getElementById('ansInput').disabled = true;
+  document.getElementById('submitBtn').classList.add('hidden');
+  setQLoad(true, 'Grading…');
+  try {
+    const g = await callClaude(gradeSystem(),
+      `Question type: ${sess.currentQ.type}\nPrompt: ${sess.currentQ.prompt}\nCorrect answer: ${sess.currentQ.answer}\nLearner answer: "${ans}"`,
+      false);
+    setQLoad(false);
+    showFeedback(g);
+    const tag = sess.currentQ.item_tag || 'unknown';
+    const type = sess.currentQ.type.includes('rule') ? 'rule' : 'vocab';
+    if (g.grade === 'correct') {
+      sess.correct++;
+      if (!sess.strong.includes(tag)) sess.strong.push(tag);
+      sess.weak = sess.weak.filter(w => w !== tag);
+      updateTrackerItem(tag, type, true);
+    } else if (g.grade === 'almost') {
+      sess.almost++;
+      updateTrackerItem(tag, type, false);
+    } else {
+      sess.wrong++;
+      if (!sess.weak.includes(tag)) sess.weak.push(tag);
+      updateTrackerItem(tag, type, false);
+    }
+    document.getElementById('qScore').textContent = sess.correct + ' correct';
+    document.getElementById('nextBtn').classList.remove('hidden');
+    sess.awaitingNext = true;
+  } catch(e) {
+    setQLoad(false);
+    document.getElementById('ansInput').disabled = false;
+    document.getElementById('submitBtn').classList.remove('hidden');
+    alert('Grading error: ' + e.message);
+  }
+}
+
+function showFeedback(g) {
+  const el = document.getElementById('feedback');
+  el.className = 'feedback show ' + g.grade;
+  document.getElementById('fbGrade').textContent = {correct:'✓ Correct', almost:'~ Almost correct', incorrect:'✗ Incorrect'}[g.grade];
+  document.getElementById('fbAns').textContent = g.correction;
+  document.getElementById('fbExp').textContent = g.explanation;
+  const tag = document.getElementById('fbTag');
+  if (g.error_type && g.error_type !== 'null') { tag.textContent = g.error_type; tag.classList.remove('hidden'); }
+  else tag.classList.add('hidden');
+}
+
+function clearFeedback() {
+  document.getElementById('feedback').className = 'feedback hidden';
+}
+
+function showHint() {
+  if (!sess.currentQ) return;
+  document.getElementById('qHintText').textContent = '💡 ' + sess.currentQ.hint;
+  document.getElementById('qHintText').classList.remove('hidden');
+  document.getElementById('hintBtn').style.display = 'none';
+}
+
+function nextQuestion() {
+  if (sess.qNum >= sess.total) showQuizSummary();
+  else loadQuestion();
+}
+
+function endQuiz() { showQuizSummary(); }
+
+function updateQProgress() {
+  const pct = Math.round(((sess.qNum - 1) / sess.total) * 100);
+  document.getElementById('qProgress').style.width = pct + '%';
+  document.getElementById('qCounter').textContent = 'Question ' + sess.qNum + ' of ' + sess.total;
+}
+
+function setQLoad(show, msg) {
+  const el = document.getElementById('qLoading');
+  el.classList.toggle('hidden', !show);
+  if (msg) document.getElementById('qLoadMsg').textContent = msg;
+}
+
+function showQuizSummary() {
+  saveSession();
+  document.getElementById('pQuiz').classList.add('hidden');
+  document.getElementById('pSummary').classList.remove('hidden');
+  const total = sess.correct + sess.almost + sess.wrong;
+  const pct = total > 0 ? Math.round(sess.correct / total * 100) : 0;
+  document.getElementById('summaryStats').innerHTML = `
+    <div class="stat"><div class="stat-num">${pct}%</div><div class="stat-lbl">Accuracy</div></div>
+    <div class="stat"><div class="stat-num">${sess.correct}</div><div class="stat-lbl">Correct</div></div>
+    <div class="stat"><div class="stat-num">${sess.almost}</div><div class="stat-lbl">Almost</div></div>
+    <div class="stat"><div class="stat-num">${sess.wrong}</div><div class="stat-lbl">Incorrect</div></div>`;
+  document.getElementById('weakTags').innerHTML = sess.weak.length
+    ? sess.weak.map(w => `<span class="tag weak">${w}</span>`).join('')
+    : '<span class="muted" style="font-size:13px">None this session 🎉</span>';
+  document.getElementById('strongTags').innerHTML = sess.strong.length
+    ? sess.strong.map(s => `<span class="tag strong">${s}</span>`).join('')
+    : '<span class="muted" style="font-size:13px">Keep going!</span>';
+  const focus = sess.weak.length
+    ? `Next session: run a <strong class="gold">Weak Spots</strong> drill to target ${sess.weak.slice(0,3).join(', ')}. Then try Sentence Building to use them in context.`
+    : `Strong session! Try a <strong class="gold">Deep Practice</strong> or <strong class="gold">Conversation</strong> to push further.`;
+  document.getElementById('suggestText').innerHTML = focus;
+}
+
+/* ══════════════════════════════════
+   CONVERSATION ENGINE
+══════════════════════════════════ */
+function convoSystem() {
+  return `You are Elena, a friendly native Spanish speaker texting with an English-speaking beginner.
+The learner has completed Language Transfer lessons 1–${cfg.lesson}. You have their PDFs attached.
+RULES:
+- Speak ONLY in Spanish. Keep sentences short. Use ONLY vocabulary from the learner's PDFs and LT lessons 1–${cfg.lesson}.
+- After EVERY learner message, gently note any errors in their Spanish (or confirm correctness).
+- Keep the conversation natural — ask follow-up questions to keep it going.
+- Scenario: ${SCENES[sess.scene] || SCENES.free}
+RESPOND WITH VALID JSON ONLY:
+{ "spanish": "your Spanish reply", "english_translation": "English translation", "correction": "if error: 'You said X — should be Y because [brief reason]'. If correct: null" }`;
+}
+
+async function startConvo() {
+  document.getElementById('messages').innerHTML = '';
+  sess.convoHistory = [];
+  document.getElementById('sceneText').textContent = SCENES[sess.scene] || SCENES.free;
+  document.getElementById('convoLoading').classList.remove('hidden');
+  try {
+    const r = await callClaude(convoSystem(),
+      `Start the conversation. Open with a natural Spanish greeting fitting the scenario. Use only vocabulary a learner at LT lesson ${cfg.lesson} would know. JSON only.`);
+    document.getElementById('convoLoading').classList.add('hidden');
+    addMsg('partner', r.spanish, r.english_translation, null);
+    sess.convoHistory.push({ role:'assistant', content: r.spanish });
+  } catch(e) {
+    document.getElementById('convoLoading').classList.add('hidden');
+    addMsg('partner', '¡Hola! ¿Cómo estás?', 'Hello! How are you?', null);
+  }
+}
+
+async function sendMsg() {
+  const input = document.getElementById('convoInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  addMsg('user', text, null, null);
+  sess.convoHistory.push({ role:'user', content: text });
+  document.getElementById('convoLoading').classList.remove('hidden');
+  const history = sess.convoHistory.map(m => m.role + ': ' + m.content).join('\n');
+  try {
+    const r = await callClaude(convoSystem(),
+      `Conversation so far:\n${history}\n\nLearner just said: "${text}"\n\nRespond as Elena. JSON only.`);
+    document.getElementById('convoLoading').classList.add('hidden');
+    if (r.correction) sess.convoCorrected++;
+    addMsg('partner', r.spanish, r.english_translation, r.correction);
+    sess.convoHistory.push({ role:'assistant', content: r.spanish });
+  } catch(e) {
+    document.getElementById('convoLoading').classList.add('hidden');
+    addMsg('partner', 'Lo siento, no entiendo. ¿Puedes repetir?', 'Sorry, I don\'t understand. Can you repeat?', null);
+  }
+}
+
+function addMsg(from, spanish, translation, correction) {
+  const wrap = document.getElementById('messages');
+  const d = document.createElement('div');
+  d.className = 'msg ' + from;
+  d.innerHTML = `<div class="msg-av">${from === 'partner' ? 'ES' : 'TÚ'}</div>
+    <div class="msg-bub">
+      <div class="msg-es">${spanish}</div>
+      ${translation ? `<div class="msg-tr">${translation}</div>` : ''}
+      ${correction ? `<div class="msg-fix">💬 ${correction}</div>` : ''}
+    </div>`;
+  wrap.appendChild(d);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function endConvo() {
+  saveSession();
+  document.getElementById('pConvo').classList.add('hidden');
+  document.getElementById('pSummary').classList.remove('hidden');
+  const msgs = sess.convoHistory.filter(m => m.role === 'user').length;
+  document.getElementById('summaryStats').innerHTML = `
+    <div class="stat"><div class="stat-num">${msgs}</div><div class="stat-lbl">Messages sent</div></div>
+    <div class="stat"><div class="stat-num">${sess.convoCorrected}</div><div class="stat-lbl">Corrections</div></div>`;
+  document.getElementById('weakTags').innerHTML = '<span class="muted" style="font-size:13px">Review any corrected items above.</span>';
+  document.getElementById('strongTags').innerHTML = '<span class="muted" style="font-size:13px">Great production practice!</span>';
+  document.getElementById('suggestText').innerHTML = 'Follow up with a <strong class="gold">Sentence Building</strong> drill to reinforce any patterns that felt uncertain during the conversation.';
+}
+
+function newSession() {
+  document.getElementById('pSummary').classList.add('hidden');
+  document.getElementById('pSetup').classList.remove('hidden');
+}
+
+function backToSetup() {
+  document.getElementById('pSummary').classList.add('hidden');
+  document.getElementById('pSetup').classList.remove('hidden');
+}
+
+/* ══════════════════════════════════
+   TRACKER — DATA
+══════════════════════════════════ */
+function loadDB() {
+  try {
+    const raw = localStorage.getItem(STORE);
+    if (raw) db = JSON.parse(raw);
+  } catch { db = { sessions:[], items:{}, streak:{last:null,count:0} }; }
+}
+
+function saveDB() {
+  try { localStorage.setItem(STORE, JSON.stringify(db)); } catch {}
+}
+
+function updateTrackerItem(tag, type, correct) {
+  if (!db.items[tag]) db.items[tag] = { type, attempts:0, correct:0, lastDate:null };
+  db.items[tag].attempts++;
+  if (correct) db.items[tag].correct++;
+  db.items[tag].lastDate = today();
+  saveDB();
+}
+
+function saveSession() {
+  if (sess.correct + sess.almost + sess.wrong === 0 && sess.convoHistory.length === 0) return;
+  db.sessions.push({ date:today(), correct:sess.correct, almost:sess.almost, wrong:sess.wrong });
+  updateStreak();
+  saveDB();
+}
+
+function updateStreak() {
+  const t = today();
+  const s = db.streak;
+  if (!s.last) { db.streak = { last:t, count:1 }; return; }
+  const diff = Math.round((new Date(t) - new Date(s.last)) / 86400000);
+  if (diff === 1) db.streak = { last:t, count: s.count + 1 };
+  else if (diff === 0) db.streak = { last:t, count: s.count };
+  else db.streak = { last:t, count:1 };
+}
+
+function today() { return new Date().toISOString().split('T')[0]; }
+function pct(v) { return v.attempts > 0 ? Math.round(v.correct / v.attempts * 100) : 0; }
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-CA', { month:'short', day:'numeric' });
+}
+
+/* ══════════════════════════════════
+   TRACKER — RENDER
+══════════════════════════════════ */
+function renderTracker() {
+  const sessions = db.sessions || [];
+  const items = Object.entries(db.items || {});
+  document.getElementById('trackerSub').textContent = sessions.length
+    ? `${sessions.length} session${sessions.length > 1 ? 's' : ''} · last ${fmtDate(sessions[sessions.length-1]?.date)}`
+    : 'No sessions recorded yet';
+  const totAtt = items.reduce((s,[,v]) => s + v.attempts, 0);
+  const totCor = items.reduce((s,[,v]) => s + v.correct, 0);
+  const acc = totAtt > 0 ? Math.round(totCor / totAtt * 100) : 0;
+  const weak = items.filter(([,v]) => v.attempts >= 3 && pct(v) < 60).length;
+  const accCls = acc >= 80 ? 'g' : acc >= 60 ? 'a' : 'r';
+  const weakCls = weak > 5 ? 'r' : weak > 0 ? 'a' : 'g';
+  document.getElementById('trackerMetrics').innerHTML = `
+    <div class="metric"><div class="metric-val">${items.length}</div><div class="metric-lbl">Items tracked</div></div>
+    <div class="metric"><div class="metric-val ${accCls}">${totAtt > 0 ? acc + '%' : '—'}</div><div class="metric-lbl">Overall accuracy</div></div>
+    <div class="metric"><div class="metric-val">${sessions.length}</div><div class="metric-lbl">Sessions</div></div>
+    <div class="metric"><div class="metric-val ${weakCls}">${weak}</div><div class="metric-lbl">Needing work</div></div>`;
+  const streak = db.streak || {};
+  if (streak.count >= 2) {
+    document.getElementById('streakBadge').classList.remove('hidden');
+    document.getElementById('streakNum').textContent = streak.count;
+  }
+  renderChart(sessions);
+  renderTable(items, trackerFilter);
+}
+
+function renderChart(sessions) {
+  if (chart) { chart.destroy(); chart = null; }
+  const last = sessions.slice(-12);
+  if (!last.length) return;
+  const labels = last.map((_, i) => 'S' + (sessions.length - last.length + i + 1));
+  chart = new Chart(document.getElementById('sessionChart'), {
+    type:'bar',
+    data:{ labels, datasets:[
+      { label:'Correct',   data:last.map(s=>s.correct||0),  backgroundColor:'#639922', stack:'s' },
+      { label:'Almost',    data:last.map(s=>s.almost||0),   backgroundColor:'#BA7517', stack:'s' },
+      { label:'Incorrect', data:last.map(s=>s.wrong||0),    backgroundColor:'#E24B4A', stack:'s' },
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ display:false } },
+      scales:{
+        x:{ grid:{ display:false }, ticks:{ color:'#7a7268', font:{ size:11 } } },
+        y:{ grid:{ color:'rgba(255,255,255,.05)' }, ticks:{ color:'#7a7268', font:{ size:11 }, stepSize:1 }, stacked:true }
+      }
+    }
+  });
+}
+
+function renderTable(items, filter) {
+  let filtered = items;
+  if (filter === 'weak')  filtered = items.filter(([,v]) => v.attempts >= 2 && pct(v) < 60);
+  if (filter === 'strong') filtered = items.filter(([,v]) => v.attempts >= 2 && pct(v) >= 80);
+  if (['vocab','rule','phrase'].includes(filter)) filtered = items.filter(([,v]) => v.type === filter);
+  filtered.sort((a, b) => pct(a[1]) - pct(b[1]));
+  const wrap = document.getElementById('itemTableWrap');
+  if (!filtered.length) {
+    wrap.innerHTML = `<div class="empty">${items.length ? 'No items match this filter.' : 'Complete a practice session and your items will appear here.'}</div>`;
+    return;
+  }
+  const rows = filtered.map(([key, v]) => {
+    const p = pct(v), cls = p >= 80 ? 'g' : p >= 60 ? 'a' : 'r';
+    return `<tr>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${key}">${key}</td>
+      <td><span class="type-tag ${v.type||''}">${v.type||'item'}</span></td>
+      <td style="text-align:center">${v.attempts}</td>
+      <td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill ${cls}" style="width:${p}%"></div></div><span class="pct ${cls}">${p}%</span></div></td>
+      <td style="font-size:12px;color:var(--muted)">${fmtDate(v.lastDate)}</td>
+    </tr>`;
+  }).join('');
+  wrap.innerHTML = `<table class="t-table">
+    <thead><tr>
+      <th style="width:34%">Item</th>
+      <th style="width:13%">Type</th>
+      <th style="width:10%;text-align:center">Attempts</th>
+      <th style="width:30%">Accuracy</th>
+      <th style="width:13%">Last seen</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+function setFilter(f, el) {
+  trackerFilter = f;
+  document.querySelectorAll('#screen-tracker .pill').forEach(p => p.classList.remove('on'));
+  el.classList.add('on');
+  renderTable(Object.entries(db.items || {}), f);
+}
+
+function exportCSV() {
+  const items = Object.entries(db.items || {});
+  if (!items.length) { alert('No data to export yet.'); return; }
+  const rows = [['Item','Type','Attempts','Correct','Accuracy%','Last Seen'],
+    ...items.map(([k,v]) => [k, v.type||'', v.attempts, v.correct, pct(v), v.lastDate||''])];
+  const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'spanish_progress.csv';
+  a.click();
+}
+
+function confirmReset() {
+  if (confirm('Reset ALL tracker data? This cannot be undone.')) {
+    db = { sessions:[], items:{}, streak:{last:null,count:0} };
+    saveDB();
+    renderTracker();
+  }
+}
+</script>
+</body>
+</html>
