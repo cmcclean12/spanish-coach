@@ -316,7 +316,7 @@ textarea{resize:none}
           </div>
         </div>
       </div>
-      <div style="font-size:12px;color:var(--muted);margin-top:.6rem">Re-upload whenever your OneNote files change. The coach reads the full PDF each session.</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:.6rem">PDFs are saved in your browser — you only need to re-upload when your OneNote files change.</div>
     </div>
 
     <button class="btn btn-primary" id="saveSettingsBtn" onclick="saveSettings()">Save &amp; go to practice →</button>
@@ -356,6 +356,7 @@ textarea{resize:none}
           <div class="pill" data-d="sentences" onclick="selPill(this,'drill')">Sentence building</div>
           <div class="pill" data-d="mixed" onclick="selPill(this,'drill')">Mixed</div>
           <div class="pill" data-d="weakspots" onclick="selPill(this,'drill')">Weak spots</div>
+          <div class="pill" data-d="weakvocab" onclick="selPill(this,'drill')">Weak vocab</div>
         </div>
       </div>
 
@@ -521,8 +522,10 @@ const SCENES = {
 let cfg = {
   apiKey: localStorage.getItem('sc-key') || '',
   lesson: parseInt(localStorage.getItem('sc-lesson')) || null,
-  vocabB64: null,
-  rulesB64: null,
+  vocabB64: localStorage.getItem('sc-vocab') || null,
+  rulesB64: localStorage.getItem('sc-rules') || null,
+  vocabName: localStorage.getItem('sc-vocab-name') || null,
+  rulesName: localStorage.getItem('sc-rules-name') || null,
 };
 
 let sess = {
@@ -550,6 +553,9 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('lessonChip').textContent = 'LT ' + cfg.lesson;
     document.getElementById('lessonChip').classList.remove('hidden');
   }
+  // Show saved PDF names in settings
+  if (cfg.vocabName) { const s = document.getElementById('vStatus'); s.className='upload-ok'; s.textContent='✓ ' + cfg.vocabName + ' (saved)'; }
+  if (cfg.rulesName) { const s = document.getElementById('rStatus'); s.className='upload-ok'; s.textContent='✓ ' + cfg.rulesName + ' (saved)'; }
   if (cfg.apiKey && cfg.lesson) {
     switchTab('practice');
   }
@@ -583,10 +589,15 @@ async function handleUpload(type, input) {
   statusEl.className = ''; statusEl.textContent = 'Reading…';
   try {
     const b64 = await toB64(file);
-    if (type === 'vocab') cfg.vocabB64 = b64;
-    else cfg.rulesB64 = b64;
+    if (type === 'vocab') {
+      cfg.vocabB64 = b64; cfg.vocabName = file.name;
+      try { localStorage.setItem('sc-vocab', b64); localStorage.setItem('sc-vocab-name', file.name); } catch(e) {}
+    } else {
+      cfg.rulesB64 = b64; cfg.rulesName = file.name;
+      try { localStorage.setItem('sc-rules', b64); localStorage.setItem('sc-rules-name', file.name); } catch(e) {}
+    }
     statusEl.className = 'upload-ok';
-    statusEl.textContent = '✓ ' + file.name;
+    statusEl.textContent = '✓ ' + file.name + ' (saved)';
   } catch {
     statusEl.className = 'upload-err';
     statusEl.textContent = '✗ Failed to read';
@@ -648,7 +659,7 @@ function selPill(el, group) {
   el.classList.add('on');
   if (group === 'drill') {
     sess.drill = el.getAttribute('data-d');
-    sess.total = {quick:5,standard:10,deep:20,vocab:10,rules:10,sentences:10,mixed:15,weakspots:10}[sess.drill] || 10;
+    sess.total = {quick:5,standard:10,deep:20,vocab:10,rules:10,sentences:10,mixed:15,weakspots:10,weakvocab:10}[sess.drill] || 10;
   } else {
     sess.scene = el.getAttribute('data-s');
   }
@@ -708,7 +719,8 @@ const DRILL_NOTES = {
   rules:'Rules only. Ask the learner to explain a rule, apply it, or identify which applies.',
   sentences:'Sentence building only. Full English sentence → full Spanish translation. Prioritise verbs of motion, object pronouns, question formation.',
   mixed:'All question types in roughly equal proportion.',
-  weakspots:'Focus on weak spots. Re-test items the learner has missed. Use the most grammatically complex patterns if no weak spots are known yet.'
+  weakspots:'Focus on weak spots. Re-test items the learner has missed. Use the most grammatically complex patterns if no weak spots are known yet.',
+  weakvocab:'Vocabulary weak spots ONLY. Focus exclusively on individual words and short phrases the learner has missed or not seen recently. Alternate EN->ES and ES->EN. Do NOT ask the same word twice in this session.'
 };
 
 function quizSystem() {
@@ -719,7 +731,8 @@ You have their Vocabulary PDF and Rules PDF attached.
 STRICT RULES:
 - Use ONLY vocabulary/rules from the uploaded PDFs and LT lessons 1–${cfg.lesson}.
 - NEVER use material from lessons beyond ${cfg.lesson}.
-- Rotate across ALL vocabulary. Do NOT repeat verbs or patterns from these already-used tags this session: ${JSON.stringify(sess.strong)}.
+- STRICT NO-REPEAT RULE: Never ask the same question, the same word, or the same sentence pattern more than once per session. Already-used item tags this session: ${JSON.stringify(sess.strong)}. Do not reuse any of these.
+- Rotate across ALL vocabulary in the PDFs. Each question must test something different.
 - Weak spots to re-test: ${JSON.stringify(sess.weak)}.
 - Never reveal the answer before the learner attempts.
 
@@ -938,14 +951,23 @@ function addMsg(from, spanish, translation, correction) {
   const wrap = document.getElementById('messages');
   const d = document.createElement('div');
   d.className = 'msg ' + from;
+  const msgId = 'msg-' + Date.now() + '-' + Math.random().toString(36).slice(2);
   d.innerHTML = `<div class="msg-av">${from === 'partner' ? 'ES' : 'TÚ'}</div>
     <div class="msg-bub">
       <div class="msg-es">${spanish}</div>
-      ${translation ? `<div class="msg-tr">${translation}</div>` : ''}
+      ${translation && from === 'partner' ? `<button class="btn-link" style="font-size:11px;margin-top:.3rem" onclick="toggleTr('${msgId}')">See translation</button><div class="msg-tr" id="${msgId}" style="display:none">${translation}</div>` : ''}
       ${correction ? `<div class="msg-fix">💬 ${correction}</div>` : ''}
     </div>`;
   wrap.appendChild(d);
   wrap.scrollTop = wrap.scrollHeight;
+}
+
+function toggleTr(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const btn = el.previousElementSibling;
+  if (el.style.display === 'none') { el.style.display = ''; if(btn) btn.textContent = 'Hide translation'; }
+  else { el.style.display = 'none'; if(btn) btn.textContent = 'See translation'; }
 }
 
 function endConvo() {
