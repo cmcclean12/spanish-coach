@@ -731,8 +731,10 @@ You have their Vocabulary PDF and Rules PDF attached.
 STRICT RULES:
 - Use ONLY vocabulary/rules from the uploaded PDFs and LT lessons 1–${cfg.lesson}.
 - NEVER use material from lessons beyond ${cfg.lesson}.
-- STRICT NO-REPEAT RULE: Never ask the same question, the same word, or the same sentence pattern more than once per session. Already-used item tags this session: ${JSON.stringify(sess.strong)}. Do not reuse any of these.
-- Rotate across ALL vocabulary in the PDFs. Each question must test something different.
+- STRICT NO-REPEAT RULE: Never ask the same question, word, or sentence pattern more than once per session. Already-used item tags: ${JSON.stringify(sess.strong)}. Do not reuse any of these.
+- VERB ROTATION — CRITICAL: Do NOT start sentences with "I want" (quiero) more than once per session. Rotate across ALL verbs in the PDFs: movement verbs (voy, paso), irregular verbs (tengo, salgo, vengo, pongo), stem-changers (duermo, puedo, pienso, muestro), and regular verbs (hablo, tomo, vendo, compro). Each question must feature a DIFFERENT verb as the main action.
+- Vary sentence subjects too: use he/she/they/you sentences, not only "I" sentences.
+- Rotate across ALL vocabulary in the PDFs. Each question must test something different from the previous one.
 - Weak spots to re-test: ${JSON.stringify(sess.weak)}.
 - Never reveal the answer before the learner attempts.
 
