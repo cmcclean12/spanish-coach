@@ -531,7 +531,7 @@ let cfg = {
 let sess = {
   mode:'quiz', drill:'standard', scene:'cafe',
   qNum:0, total:10, correct:0, almost:0, wrong:0,
-  weak:[], strong:[], currentQ:null, awaitingNext:false,
+  weak:[], strong:[], usedPrompts:[], currentQ:null, awaitingNext:false,
   convoHistory:[], convoCorrected:0,
 };
 
@@ -672,7 +672,7 @@ function startSession() {
   if (!cfg.vocabB64 || !cfg.rulesB64) { warn.textContent = 'Please upload both PDF files in Settings first.'; warn.classList.remove('hidden'); return; }
   warn.classList.add('hidden');
   sess.qNum = 0; sess.correct = 0; sess.almost = 0; sess.wrong = 0;
-  sess.weak = []; sess.strong = []; sess.awaitingNext = false;
+  sess.weak = []; sess.strong = []; sess.usedPrompts = []; sess.awaitingNext = false;
   sess.convoHistory = []; sess.convoCorrected = 0;
   document.getElementById('pSetup').classList.add('hidden');
   if (sess.mode === 'quiz') {
@@ -731,7 +731,8 @@ You have their Vocabulary PDF and Rules PDF attached.
 STRICT RULES:
 - Use ONLY vocabulary/rules from the uploaded PDFs and LT lessons 1–${cfg.lesson}.
 - NEVER use material from lessons beyond ${cfg.lesson}.
-- STRICT NO-REPEAT RULE: Never ask the same question, word, or sentence pattern more than once per session. Already-used item tags: ${JSON.stringify(sess.strong)}. Do not reuse any of these.
+- ABSOLUTE NO-REPEAT RULE: The exact prompts already used this session are passed in the user message. You MUST NOT ask the same question or any close variant of it. Violating this rule is the worst possible failure.
+- Also avoid reusing these item tags: ${JSON.stringify(sess.strong)}.
 - VERB ROTATION — CRITICAL: Do NOT start sentences with "I want" (quiero) more than once per session. Rotate across ALL verbs in the PDFs: movement verbs (voy, paso), irregular verbs (tengo, salgo, vengo, pongo), stem-changers (duermo, puedo, pienso, muestro), and regular verbs (hablo, tomo, vendo, compro). Each question must feature a DIFFERENT verb as the main action.
 - Vary sentence subjects too: use he/she/they/you sentences, not only "I" sentences.
 - Rotate across ALL vocabulary in the PDFs. Each question must test something different from the previous one.
@@ -780,8 +781,9 @@ async function loadQuestion() {
   document.getElementById('hintBtn').style.display = '';
   sess.awaitingNext = false;
   try {
-    const q = await callClaude(quizSystem(), `Generate question ${sess.qNum} of ${sess.total}.`);
+    const q = await callClaude(quizSystem(), `Generate question ${sess.qNum} of ${sess.total}. ALREADY ASKED THIS SESSION — do not repeat these exact prompts or close variants: ${JSON.stringify(sess.usedPrompts)}`);
     sess.currentQ = q;
+    sess.usedPrompts.push(q.prompt);
     document.getElementById('qType').textContent = q.type;
     document.getElementById('qText').textContent = q.prompt;
     setQLoad(false);
