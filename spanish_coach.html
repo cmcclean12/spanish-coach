@@ -352,7 +352,7 @@ textarea{resize:none}
           <div class="pill" data-d="quick" onclick="selPill(this,'drill')">Quick (5)</div>
           <div class="pill" data-d="deep" onclick="selPill(this,'drill')">Deep (20)</div>
           <div class="pill" data-d="vocab" onclick="selPill(this,'drill')">Vocab only</div>
-          <div class="pill" data-d="rules" onclick="selPill(this,'drill')">Rules only</div>
+          <div class="pill" data-d="rules" onclick="selPill(this,'drill')">Rules only (5)</div>
           <div class="pill" data-d="sentences" onclick="selPill(this,'drill')">Sentence building</div>
           <div class="pill" data-d="mixed" onclick="selPill(this,'drill')">Mixed</div>
           <div class="pill" data-d="weakspots" onclick="selPill(this,'drill')">Weak spots</div>
@@ -659,7 +659,7 @@ function selPill(el, group) {
   el.classList.add('on');
   if (group === 'drill') {
     sess.drill = el.getAttribute('data-d');
-    sess.total = {quick:5,standard:10,deep:20,vocab:10,rules:10,sentences:10,mixed:15,weakspots:10,weakvocab:10}[sess.drill] || 10;
+    sess.total = {quick:5,standard:10,deep:20,vocab:10,rules:5,sentences:10,mixed:15,weakspots:10,weakvocab:10}[sess.drill] || 10;
   } else {
     sess.scene = el.getAttribute('data-s');
   }
