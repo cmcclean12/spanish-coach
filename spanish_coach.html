@@ -316,6 +316,15 @@ textarea{resize:none}
           </div>
         </div>
       </div>
+      <div style="margin-top:.8rem">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:.4rem">CLASS NOTES PDF <span style="color:var(--gold-dim)">(optional)</span></div>
+        <div class="upload-zone" id="cZone">
+          <input type="file" accept=".pdf" id="cFile" onchange="handleUpload('class',this)">
+          <div style="font-size:12px;color:var(--muted)">Drop or click — for notes from your in-person/online class</div>
+          <div id="cStatus"></div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:.4rem">Optional. Material here is treated as fair game regardless of your Language Transfer lesson number — useful since class content may move at a different pace.</div>
+      </div>
       <div style="font-size:12px;color:var(--muted);margin-top:.6rem">PDFs are saved in your browser — you only need to re-upload when your OneNote files change.</div>
     </div>
 
@@ -357,6 +366,7 @@ textarea{resize:none}
           <div class="pill" data-d="mixed" onclick="selPill(this,'drill')">Mixed</div>
           <div class="pill" data-d="weakspots" onclick="selPill(this,'drill')">Weak spots</div>
           <div class="pill" data-d="weakvocab" onclick="selPill(this,'drill')">Weak vocab</div>
+          <div class="pill" data-d="classnotes" onclick="selPill(this,'drill')">Class notes only</div>
         </div>
       </div>
 
@@ -524,8 +534,10 @@ let cfg = {
   lesson: parseInt(localStorage.getItem('sc-lesson')) || null,
   vocabB64: localStorage.getItem('sc-vocab') || null,
   rulesB64: localStorage.getItem('sc-rules') || null,
+  classB64: localStorage.getItem('sc-class') || null,
   vocabName: localStorage.getItem('sc-vocab-name') || null,
   rulesName: localStorage.getItem('sc-rules-name') || null,
+  classNotesName: localStorage.getItem('sc-class-name') || null,
 };
 
 let sess = {
@@ -556,6 +568,7 @@ window.addEventListener('DOMContentLoaded', () => {
   // Show saved PDF names in settings
   if (cfg.vocabName) { const s = document.getElementById('vStatus'); s.className='upload-ok'; s.textContent='✓ ' + cfg.vocabName + ' (saved)'; }
   if (cfg.rulesName) { const s = document.getElementById('rStatus'); s.className='upload-ok'; s.textContent='✓ ' + cfg.rulesName + ' (saved)'; }
+  if (cfg.classNotesName) { const s = document.getElementById('cStatus'); s.className='upload-ok'; s.textContent='✓ ' + cfg.classNotesName + ' (saved)'; }
   if (cfg.apiKey && cfg.lesson) {
     switchTab('practice');
   }
@@ -585,16 +598,20 @@ function switchTab(tab) {
 async function handleUpload(type, input) {
   const file = input.files[0];
   if (!file) return;
-  const statusEl = document.getElementById(type === 'vocab' ? 'vStatus' : 'rStatus');
+  const statusMap = { vocab:'vStatus', rules:'rStatus', class:'cStatus' };
+  const statusEl = document.getElementById(statusMap[type]);
   statusEl.className = ''; statusEl.textContent = 'Reading…';
   try {
     const b64 = await toB64(file);
     if (type === 'vocab') {
       cfg.vocabB64 = b64; cfg.vocabName = file.name;
       try { localStorage.setItem('sc-vocab', b64); localStorage.setItem('sc-vocab-name', file.name); } catch(e) {}
-    } else {
+    } else if (type === 'rules') {
       cfg.rulesB64 = b64; cfg.rulesName = file.name;
       try { localStorage.setItem('sc-rules', b64); localStorage.setItem('sc-rules-name', file.name); } catch(e) {}
+    } else if (type === 'class') {
+      cfg.classB64 = b64; cfg.classNotesName = file.name;
+      try { localStorage.setItem('sc-class', b64); localStorage.setItem('sc-class-name', file.name); } catch(e) {}
     }
     statusEl.className = 'upload-ok';
     statusEl.textContent = '✓ ' + file.name + ' (saved)';
@@ -659,7 +676,7 @@ function selPill(el, group) {
   el.classList.add('on');
   if (group === 'drill') {
     sess.drill = el.getAttribute('data-d');
-    sess.total = {quick:5,standard:10,deep:20,vocab:10,rules:5,sentences:10,mixed:15,weakspots:10,weakvocab:10}[sess.drill] || 10;
+    sess.total = {quick:5,standard:10,deep:20,vocab:10,rules:5,sentences:10,mixed:15,weakspots:10,weakvocab:10,classnotes:10}[sess.drill] || 10;
   } else {
     sess.scene = el.getAttribute('data-s');
   }
@@ -670,6 +687,7 @@ function startSession() {
   if (!cfg.apiKey) { warn.textContent = 'Please add your API key in Settings first.'; warn.classList.remove('hidden'); return; }
   if (!cfg.lesson) { warn.textContent = 'Please set your Language Transfer lesson in Settings.'; warn.classList.remove('hidden'); return; }
   if (!cfg.vocabB64 || !cfg.rulesB64) { warn.textContent = 'Please upload both PDF files in Settings first.'; warn.classList.remove('hidden'); return; }
+  if (sess.drill === 'classnotes' && !cfg.classB64) { warn.textContent = 'Please upload a Class Notes PDF in Settings first to use this drill.'; warn.classList.remove('hidden'); return; }
   warn.classList.add('hidden');
   sess.qNum = 0; sess.correct = 0; sess.almost = 0; sess.wrong = 0;
   sess.weak = []; sess.strong = []; sess.usedPrompts = []; sess.awaitingNext = false;
@@ -692,6 +710,7 @@ async function callClaude(system, userText, withFiles = true) {
   if (withFiles) {
     if (cfg.vocabB64) content.push({ type:'document', source:{ type:'base64', media_type:'application/pdf', data:cfg.vocabB64 }});
     if (cfg.rulesB64) content.push({ type:'document', source:{ type:'base64', media_type:'application/pdf', data:cfg.rulesB64 }});
+    if (cfg.classB64) content.push({ type:'document', source:{ type:'base64', media_type:'application/pdf', data:cfg.classB64 }});
   }
   content.push({ type:'text', text: userText });
   const res = await fetch(API, {
@@ -720,17 +739,21 @@ const DRILL_NOTES = {
   sentences:'Sentence building only. Full English sentence → full Spanish translation. Prioritise verbs of motion, object pronouns, question formation.',
   mixed:'All question types in roughly equal proportion.',
   weakspots:'Focus on weak spots. Re-test items the learner has missed. Use the most grammatically complex patterns if no weak spots are known yet.',
-  weakvocab:'Vocabulary weak spots ONLY. Focus exclusively on individual words and short phrases the learner has missed or not seen recently. Alternate EN->ES and ES->EN. Do NOT ask the same word twice in this session.'
+  weakvocab:'Vocabulary weak spots ONLY. Focus exclusively on individual words and short phrases the learner has missed or not seen recently. Alternate EN->ES and ES->EN. Do NOT ask the same word twice in this session.',
+  classnotes:'Class Notes ONLY. Draw questions exclusively from the Class Notes PDF \u2014 ignore the Vocabulary and Rules PDFs and the LT lesson lock entirely for this drill. Mix vocabulary, verb conjugation (-ar/-er/-ir endings), and common expressions found in the Class Notes PDF. Rotate broadly across everything in that document.'
 };
 
 function quizSystem() {
+  const classNote = cfg.classB64
+    ? `\nA CLASS NOTES PDF is also attached, containing material from the learner's separate in-person/online Spanish class. Material in the Class Notes PDF is ALWAYS fair game regardless of the LT lesson number below \u2014 it is not lesson-locked, since the class moves at its own pace. Pull vocabulary, verbs, and expressions from it freely.`
+    : '';
   return `You are a Spanish practice coach for an English-speaking beginner.
-Learner has completed Language Transfer lessons 1–${cfg.lesson}.
-You have their Vocabulary PDF and Rules PDF attached.
+Learner has completed Language Transfer lessons 1–${cfg.lesson} (LT may currently be paused while they take a separate class — that's fine).
+You have their Vocabulary PDF and Rules PDF attached.${classNote}
 
 STRICT RULES:
-- Use ONLY vocabulary/rules from the uploaded PDFs and LT lessons 1–${cfg.lesson}.
-- NEVER use material from lessons beyond ${cfg.lesson}.
+- Use ONLY vocabulary/rules from the uploaded Vocabulary/Rules PDFs, LT lessons 1–${cfg.lesson}, AND anything in the Class Notes PDF if attached (Class Notes content is never lesson-locked).
+- NEVER use LT material from lessons beyond ${cfg.lesson} (this restriction does not apply to Class Notes content).
 - ABSOLUTE NO-REPEAT RULE: The exact prompts already used this session are passed in the user message. You MUST NOT ask the same question or any close variant of it. Violating this rule is the worst possible failure.
 - Also avoid reusing these item tags: ${JSON.stringify(sess.strong)}.
 - VERB ROTATION — CRITICAL: Do NOT start sentences with "I want" (quiero) more than once per session. Rotate across ALL verbs in the PDFs: movement verbs (voy, paso), irregular verbs (tengo, salgo, vengo, pongo), stem-changers (duermo, puedo, pienso, muestro), and regular verbs (hablo, tomo, vendo, compro). Each question must feature a DIFFERENT verb as the main action.
@@ -901,10 +924,13 @@ function showQuizSummary() {
    CONVERSATION ENGINE
 ══════════════════════════════════ */
 function convoSystem() {
+  const classNote = cfg.classB64
+    ? ` A Class Notes PDF is also attached from the learner's separate Spanish class — vocabulary and expressions there are fair game regardless of LT lesson.`
+    : '';
   return `You are Elena, a friendly native Spanish speaker texting with an English-speaking beginner.
-The learner has completed Language Transfer lessons 1–${cfg.lesson}. You have their PDFs attached.
+The learner has completed Language Transfer lessons 1–${cfg.lesson} (possibly paused). You have their PDFs attached.${classNote}
 RULES:
-- Speak ONLY in Spanish. Keep sentences short. Use ONLY vocabulary from the learner's PDFs and LT lessons 1–${cfg.lesson}.
+- Speak ONLY in Spanish. Keep sentences short. Use ONLY vocabulary from the learner's Vocabulary/Rules PDFs, LT lessons 1–${cfg.lesson}, and Class Notes PDF if attached.
 - After EVERY learner message, gently note any errors in their Spanish (or confirm correctness).
 - Keep the conversation natural — ask follow-up questions to keep it going.
 - Scenario: ${SCENES[sess.scene] || SCENES.free}
