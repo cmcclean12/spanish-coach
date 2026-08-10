@@ -780,14 +780,14 @@ function gradeSystem() {
   return `You are a Spanish grading assistant. Return ONLY valid JSON — no markdown.
 {
   "grade": "correct | almost | incorrect",
-  "correction": "the fully correct version",
+  "correction": "the fully correct version (with proper accents)",
   "explanation": "1–2 plain-English sentences. Reference the specific rule. Be encouraging and precise.",
-  "error_type": "vocabulary | grammar | spelling | word_order | pronoun | connector | accent | null"
+  "error_type": "vocabulary | grammar | spelling | word_order | pronoun | connector | null"
 }
 Grading:
-- correct = right answer (minor spelling ok if concept is right, e.g. qiero vs quiero)
-- almost = right idea/structure but wrong gender, missing accent, small word error, or spelling
-- incorrect = wrong verb form, wrong word, wrong structure, missing key element`;
+- correct = right answer. IMPORTANT: missing or incorrect accent marks (é, á, ó, ú, í, ñ) NEVER make an answer incorrect or almost — always grade as correct if the word and structure are right. If an accent is missing, mention it briefly in the explanation as a note only, e.g. "Perfect — just note the accent: está not esta." Do not penalise for it.
+- almost = right idea and structure but wrong gender article, small wrong word, or minor spelling error that changes the word (not just an accent)
+- incorrect = wrong verb form, wrong word choice, wrong sentence structure, wrong pronoun, or missing a key element that changes the meaning`;
 }
 
 async function loadQuestion() {
